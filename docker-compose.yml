@@ -1,3 +1,5 @@
+version: "3.8"
+
 services:
   mysql:
     container_name: ${MYSQL_CONTAINER_HOST}
@@ -12,3 +14,79 @@ services:
       MYSQL_DATABASE: ${MYSQL_DATABASE}
       MYSQL_USER: ${MYSQL_USER}
       MYSQL_PASSWORD: ${MYSQL_PASSWORD}
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-p${MYSQL_ROOT_PASSWORD}"]
+      interval: 10s
+      retries: 5
+      start_period: 30s
+
+  go_app:
+    build:
+      context: .
+      dockerfile: Dockerfile.go
+    container_name: go_container
+    depends_on:
+      mysql:
+        condition: service_healthy  # MySQL が "healthy" になるまで待つ
+    environment:
+      DB_HOST: mysql
+      DB_PORT: 3306
+      DB_USER: ${MYSQL_USER}
+      DB_PASSWORD: ${MYSQL_PASSWORD}
+      DB_NAME: ${MYSQL_DATABASE}
+    ports:
+      - "8080:8080"
+
+  python_app:
+    build:
+      context: .
+      dockerfile: Dockerfile.python
+    container_name: python_container
+    ports:
+      - "5001:5001"
+    environment:
+      FLASK_ENV: development
+
+
+# version: "3.8"
+# 
+# services:
+#   mysql:
+#     container_name: ${MYSQL_CONTAINER_HOST}
+#     image: mysql:latest
+#     ports:
+#       - "3306:3306"
+#     volumes:
+#       - ./docker/mysql/init:/docker-entrypoint-initdb.d
+#       - ./docker/mysql/data:/var/lib/mysql
+#     environment:
+#       MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+#       MYSQL_DATABASE: ${MYSQL_DATABASE}
+#       MYSQL_USER: ${MYSQL_USER}
+#       MYSQL_PASSWORD: ${MYSQL_PASSWORD}
+# 
+#   go_app:
+#     build:
+#       context: .
+#       dockerfile: Dockerfile.go
+#     container_name: go_container
+#     depends_on:
+#       - mysql
+#     environment:
+#       DB_HOST: ${MYSQL_CONTAINER_HOST}
+#       DB_PORT: 3306
+#       DB_USER: ${MYSQL_USER}
+#       DB_PASSWORD: ${MYSQL_PASSWORD}
+#       DB_NAME: ${MYSQL_DATABASE}
+#     ports:
+#       - "8080:8080"
+# 
+#   python_app:
+#     build:
+#       context: .
+#       dockerfile: Dockerfile.python
+#     container_name: python_container
+#     ports:
+#       - "5001:5001"
+#     environment:
+#       FLASK_ENV: development

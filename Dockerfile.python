@@ -1,0 +1,18 @@
+# Python の公式イメージを使用
+FROM python:3.10
+
+# 作業ディレクトリを設定
+WORKDIR /app
+
+# 必要なファイルをコピー
+COPY requirements.txt ./
+RUN pip install --no-cache-dir -r requirements.txt
+
+# アプリのコードをコピー
+COPY python/ /app/python/
+
+# 作業ディレクトリを変更
+WORKDIR /app/python
+
+# Flask サーバを起動
+CMD ["python", "app.py"]
