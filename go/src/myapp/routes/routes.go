@@ -14,7 +14,11 @@ func SetupRouter() *gin.Engine {
 
 	// CORS設定を追加
 	router.Use(cors.New(cors.Config{
-		AllowOrigins: []string{"http://localhost:3000"},
+		AllowOrigins: []string{
+			"http://localhost:3000",
+			"https://cooksensing.vercel.app", // 本番
+			"https://*.vercel.app",           // Preview 環境用
+		},
 		AllowMethods: []string{"POST", "GET", "OPTIONS"},
 		AllowHeaders: []string{"Origin", "Content-Type"},
 		// ExposeHeaders:    []string{"Content-Length"},
