@@ -56,6 +56,8 @@ type BestData struct {
 	BaseModel
 	AveragePace                   float32 `gorm:"type:double" json:"average_pace"`
 	AccelerationStandardDeviation float32 `gorm:"type:double" json:"acceleration_standard_deviation"`
+	AveragePaceClass              uint    `gorm:"type:int" json:"average_pace_class"`
+	AccelerationStdDevClass       uint    `gorm:"type:int" json:"acceleration_std_dev_class"`
 	// AveragePaceFeatureDataID                   uint    `json:"average_pace_feature_data_id"`
 	// AccelerationStandardDeviationFeatureDataID uint    `json:"acceleration_standard_deviation_feature_data_id"`
 }

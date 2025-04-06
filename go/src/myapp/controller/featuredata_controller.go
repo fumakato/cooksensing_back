@@ -92,6 +92,7 @@ func CreateFeatureDatas(c *gin.Context) {
 	// ※以下2行のエラーハンドリングは必要に応じて追加可
 	database.UpdateBestDataFromFeatureData()
 	database.GenerateAndStoreHistogramData()
+	database.AveragePaceAndAccelerationStdDev()
 
 	c.JSON(http.StatusOK, gin.H{"status": feature})
 }

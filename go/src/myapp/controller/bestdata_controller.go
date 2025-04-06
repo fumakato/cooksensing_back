@@ -30,12 +30,12 @@ func GetBestAverage(c *gin.Context) {
 
 func GetBestAll(c *gin.Context) {
 	// BestDataを取得
-	besteData, err := database.FindAllBestData()
+	bestData, err := database.FindAllBestData()
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to retrieve data"})
 		return
 	}
 
 	// 成功した場合、データをJSONで返す
-	c.JSON(http.StatusOK, gin.H{"data": besteData})
+	c.JSON(http.StatusOK, gin.H{"data": bestData})
 }

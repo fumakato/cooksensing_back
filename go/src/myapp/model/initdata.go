@@ -24,7 +24,8 @@ var UserInitData = []User{
 // time.Date(年, 月, 日, 時, 分, 秒, m秒, time.Local)
 var first = time.Date(2023, time.December, 22, 15, 0, 0, 0, time.Local)
 var second = time.Date(2023, time.December, 27, 15, 0, 0, 0, time.Local)
-var dummyNow = time.Date(2024, time.July, 16, 13, 0, 0, 0, time.Local)
+
+// var dummyNow = time.Date(2024, time.July, 16, 13, 0, 0, 0, time.Local)
 
 var FeatureDataInitData = []FeatureData{
 	{ID: 1, UserID: 1, ActionID: 1, AveragePace: 0.7567, AccelerationStandardDeviation: 0.8597, Date: first},
