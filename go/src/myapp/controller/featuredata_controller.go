@@ -13,6 +13,8 @@ import (
 
 	"time"
 
+	"log"
+
 	"github.com/gin-gonic/gin"
 )
 
@@ -89,10 +91,24 @@ func CreateFeatureDatas(c *gin.Context) {
 		return
 	}
 
-	// ※以下2行のエラーハンドリングは必要に応じて追加可
-	database.UpdateBestDataFromFeatureData()
-	database.GenerateAndStoreHistogramData()
-	database.AveragePaceAndAccelerationStdDev()
+	// database.UpdateBestDataFromFeatureData()
+	// database.GenerateAndStoreHistogramData()
+
+	err = database.UpdateBestDataFromFeatureData()
+	if err != nil {
+		log.Println("UpdateBestData error:", err)
+	}
+
+	err = database.GenerateAndStoreHistogramData()
+	if err != nil {
+		log.Println("GenerateHistogram error:", err)
+	}
+	// ⬇ ユーザーID指定で呼び出し
+	// err = database.AssignBestClassByUserID(uid)
+	err = database.AssignBestClassToAll()
+	if err != nil {
+		log.Println("AssignBestClass error:", err)
+	}
 
 	c.JSON(http.StatusOK, gin.H{"status": feature})
 }
