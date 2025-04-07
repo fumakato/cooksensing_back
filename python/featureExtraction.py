@@ -58,7 +58,7 @@ def feature_extraction(url):
             timeDeff = -3000
             thFlg = True
             for i in range(len(data)):
-                if (wAcc["time"][i] - timeDeff)/1000 > 2.5: timeFlg = True
+                if (wAcc["time"][i] - timeDeff)/1000 > 0.25: timeFlg = True
                 if data[i] > threshold:
                     if timeFlg and thFlg:
                         timeFlg = False
