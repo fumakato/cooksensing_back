@@ -47,7 +47,7 @@ def feature_extraction(url):
         ma = 300
         mi = 0
         acc_threshold = 10
-        time_threshold = 10
+        time_threshold = 5
         for j in range(3):
             print("acc_threshold:"+str(acc_threshold))
             data = norm
