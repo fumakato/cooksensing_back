@@ -47,7 +47,7 @@ def feature_extraction(url):
         ma = 300
         mi = 0
         acc_threshold = 10
-        time_threshold=0.2
+        time_threshold = 10
         for j in range(3):
             print("acc_threshold:"+str(acc_threshold))
             data = norm
@@ -98,6 +98,8 @@ def feature_extraction(url):
                 elif cutListTime[top_1_index]-wAcc["time"][0] > cutListTime[top_2_index]-wAcc["time"][0]:
                     mi=(cutListTime[top_2_index]-wAcc["time"][0])/1000 + 2
                     ma=(cutListTime[top_1_index]-wAcc["time"][0])/1000 - 2
+
+                time_threshold=0.2
 
             if j==1: #適切な閾値を取り出す
                 if len(cutListData) < 10:
