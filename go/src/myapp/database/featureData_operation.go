@@ -38,6 +38,15 @@ func FindFeatureDataByID(id uint) (model.FeatureData, error) {
 	return featureData, nil
 }
 
+// 全件取得
+func GetAllFeatureData() ([]model.FeatureData, error) {
+	var featureData []model.FeatureData
+	if err := db.Find(&featureData).Error; err != nil {
+		return nil, err
+	}
+	return featureData, nil
+}
+
 // userIDで探索した全部（下のやつに0入れたら全く同じことするからこの関数は実質いらない子になってしまいました）
 func GetFeatureDataByUserID(userID uint) ([]model.FeatureData, error) {
 	var featureData []model.FeatureData

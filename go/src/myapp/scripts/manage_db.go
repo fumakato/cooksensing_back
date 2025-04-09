@@ -25,6 +25,18 @@ go run scripts/manage_db.go -action bestaverage
 
 ヒストグラムテーブル作成
 go run scripts/manage_db.go -action histogram
+
+ベストデータとヒストグラムの更新
+go run scripts/manage_db.go -action fixData
+
+特徴量データの全権表示
+go run scripts/manage_db.go -action getAllFeatureData
+
+データベースの特徴量データテーブルの任意のidのデータを削除
+go run scripts/manage_db.go -action deleteFeatureDatabyid -id {数字}
+go run scripts/manage_db.go -action deleteFeatureDatabyid -id 3
+
+
 */
 
 package main
@@ -88,11 +100,56 @@ func histogram() {
 	database.CloseDB()
 }
 
+func fixData() {
+	database.ConnectDB()
+	database.UpdateBestDataFromFeatureData()
+	database.GenerateAndStoreHistogramData()
+	database.AssignBestClassToAll()
+	database.CloseDB()
+}
+
+func deleteFeatureDataByid(id uint) {
+	database.ConnectDB()
+	err := database.DeleteFeatureData(id)
+	if err != nil {
+		log.Fatalf("❌ Failed to delete FeatureData with ID %d: %v", id, err)
+	}
+	fmt.Printf("✅ FeatureData with ID %d deleted successfully\n", id)
+	database.CloseDB()
+}
+
+func getAllFeatureData() {
+	database.ConnectDB()
+	// 全件取得
+	featureDataList, err := database.GetAllFeatureData()
+	if err != nil {
+		log.Fatalf("❌ データ取得に失敗しました: %v", err)
+	}
+
+	// 件数ログ
+	fmt.Printf("📊 取得件数: %d 件\n", len(featureDataList))
+
+	// 中身を1件ずつ出力
+	for _, data := range featureDataList {
+		fmt.Printf("🟢 ID: %d | UserID: %d | ActionID: %d | Date: %s | AvgPace: %.2f | StdDev: %.2f | CreatedAt: %s\n",
+			data.ID,
+			data.UserID,
+			data.ActionID,
+			data.Date.Format("2006-01-02 15:04"),
+			data.AveragePace,
+			data.AccelerationStandardDeviation,
+			data.CreatedAt.Format("2006-01-02 15:04"),
+		)
+	}
+	database.CloseDB()
+}
+
 func main() {
 	config.LoadConfig()
 
 	action := flag.String("action", "", "Action to perform (init, dropall, droptable)")
 	tableName := flag.String("table", "", "Name of the table to drop (required if action is droptable)")
+	id := flag.Uint("id", 0, "ID of the record to delete")
 	flag.Parse()
 
 	if *action == "" {
@@ -117,31 +174,18 @@ func main() {
 		histogram()
 	case "dropmigrate":
 		dropmigrate()
+	case "fixData":
+		fixData()
+	case "getAllFeatureData":
+		getAllFeatureData()
+
+	case "deleteFeatureDatabyid":
+		if *id == 0 {
+			log.Fatal("ID must be provided for deleteFeatureDatabyid action")
+		}
+		deleteFeatureDataByid(*id)
+
 	default:
 		log.Fatalf("Unknown action: %s", *action)
 	}
 }
-
-// gormを使ってHistogramの中身を操作するコードを作ってください．
-// type Histogram struct {
-// 	ID uint `gorm:"primaryKey;autoIncrement" json:"id"`
-// 	BaseModel
-// 	DisplayItemID uint `json:"display_item_id"`
-// 	ActionID      uint `json:"action_id"`
-// 	Time1         uint `gorm:"default:0" json:"time1"`
-// 	Time2         uint `gorm:"default:0" json:"time2"`
-// 	Time3         uint `gorm:"default:0" json:"time3"`
-// 	Time4         uint `gorm:"default:0" json:"time4"`
-// 	Time5         uint `gorm:"default:0" json:"time5"`
-// 	Time6         uint `gorm:"default:0" json:"time6"`
-// 	Time7         uint `gorm:"default:0" json:"time7"`
-// 	Time8         uint `gorm:"default:0" json:"time8"`
-// 	Time9         uint `gorm:"default:0" json:"time9"`
-// 	Time10        uint `gorm:"default:0" json:"time10"`
-// }
-// HistogramテーブルはAveragePaceとAccelerationStandardDeviationのデータを用いたヒストグラムのデータを格納しています．
-// BesteDataから全件を取り出します．
-// AveragePace内で最大値と最小値を求めます．最大値-最小値でデータの範囲を求めます．データの範囲を10分割し，それぞれTime1からTime10に割り当てます．
-// それぞれの範囲に所属する人数を求めてテーブルに格納します．
-// AccelerationStandardDeviationも同様に行います．
-// また，最大値と最小値，データの範囲を標準出力に出力してください

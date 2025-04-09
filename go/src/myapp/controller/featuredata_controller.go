@@ -93,6 +93,7 @@ func CreateFeatureDatas(c *gin.Context) {
 
 	// database.UpdateBestDataFromFeatureData()
 	// database.GenerateAndStoreHistogramData()
+	// database.AssignBestClassToAll()
 
 	err = database.UpdateBestDataFromFeatureData()
 	if err != nil {

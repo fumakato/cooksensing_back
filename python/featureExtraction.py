@@ -44,22 +44,22 @@ def feature_extraction(url):
         # ノルムの計算
         norm = ( wAcc["x"]**2 + wAcc["y"]**2+ wAcc["z"]**2 )**0.5
 
-        data = norm
-        cutList = []
-        cutListTime = []
-        cutListData = []
-
-        cutNum = 0
-        tmp = 0
-        threshold = 10
-        for j in range(2):
-            print("threshold:"+str(threshold))
+        ma = 300
+        mi = 0
+        acc_threshold = 10
+        time_threshold=0.2
+        for j in range(3):
+            print("acc_threshold:"+str(acc_threshold))
+            data = norm
+            cutList = []
+            cutListTime = []
+            cutListData = []
             timeFlg = True
             timeDeff = -3000
             thFlg = True
             for i in range(len(data)):
-                if (wAcc["time"][i] - timeDeff)/1000 > 0.25: timeFlg = True
-                if data[i] > threshold:
+                if (wAcc["time"][i] - timeDeff)/1000 > time_threshold: timeFlg = True
+                if data[i] > acc_threshold and mi<=(wAcc["time"][i]-wAcc["time"][0])/1000<=ma:
                     if timeFlg and thFlg:
                         timeFlg = False
                         timeDeff = wAcc["time"][i]
@@ -74,27 +74,45 @@ def feature_extraction(url):
                 else: thFlg = True
 
 
-            if j==0:  
-                if len(cutListData) < 7:
+            if j==0: #はじめと終わりを検出
+                if len(cutListData) < 2:
+                    return jsonify({
+                        'error': '十分なピークデータが検出できませんでした。',
+                            'code': 'INSUFFICIENT_PEAKS'
+                    }), 422
+                print("len(cutListData)",len(cutListData))
+                # 一番目と二番目に大きいデータを取得
+                top_2 = heapq.nlargest(2, cutListData)
+                # 一番目と二番目に大きいデータのインデックスを取得
+                print("top_2",top_2)
+                top_1_index = cutListData.index(top_2[0])
+                top_2_index = cutListData.index(top_2[1])
+
+                print("cutListTime",cutListTime[top_1_index]-wAcc["time"][0])
+                print("cutListTime",cutListTime[top_2_index]-wAcc["time"][0])
+
+                    # 終わりと初めが入れ替わる可能性がある。2秒の余裕を持たせる
+                if cutListTime[top_1_index]-wAcc["time"][0] < cutListTime[top_2_index]-wAcc["time"][0]:
+                    mi=(cutListTime[top_1_index]-wAcc["time"][0])/1000 + 2
+                    ma=(cutListTime[top_2_index]-wAcc["time"][0])/1000 - 2
+                elif cutListTime[top_1_index]-wAcc["time"][0] > cutListTime[top_2_index]-wAcc["time"][0]:
+                    mi=(cutListTime[top_2_index]-wAcc["time"][0])/1000 + 2
+                    ma=(cutListTime[top_1_index]-wAcc["time"][0])/1000 - 2
+
+            if j==1: #適切な閾値を取り出す
+                if len(cutListData) < 10:
                     return jsonify({
                         'error': '十分なピークデータが検出できませんでした。',
                         'code': 'INSUFFICIENT_PEAKS'
                     }), 422
-                #ここから新しく入れたところ 
-                # 一番目と二番目に大きいデータを取得
-                top_2 = heapq.nlargest(2, cutListData)
-                # 一番目と二番目に大きいデータのインデックスを取得
-                top_1_index = cutListData.index(top_2[0])
-                top_2_index = cutListData.index(top_2[1])
-                # 切ってない部分を削除
-                cutList = cutList[top_1_index+1:top_2_index]
-                cutListTime = cutListTime[top_1_index+1:top_2_index]
-                cutListData = cutListData[top_1_index+1:top_2_index]
+                # 上から10つの大きいデータを取得
+                top_10 = heapq.nlargest(10, cutListData)
+                print("top_10",top_10)
+                avetmp = sum(top_10) / 10
 
-                # 上から5つの大きいデータを取得
-                average = sum(heapq.nlargest(5, cutListData)) / 5
-                threshold = average * 0.8
-                print("cut:"+str(len(cutList)))
+                acc_threshold = avetmp * 0.9
+                if acc_threshold < 10.1 : acc_threshold=10.1
+
 
         print("cut:"+str(len(cutList)))
 
