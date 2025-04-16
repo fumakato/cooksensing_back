@@ -47,7 +47,7 @@ def feature_extraction(url):
         ma = 300
         mi = 0
         acc_threshold = 10
-        time_threshold = 5
+        time_threshold = 8
         for j in range(3):
             print("acc_threshold:"+str(acc_threshold))
             data = norm
@@ -77,7 +77,7 @@ def feature_extraction(url):
             if j==0: #はじめと終わりを検出
                 if len(cutListData) < 2:
                     return jsonify({
-                        'error': '十分なピークデータが検出できませんでした。',
+                        'error': 'はじめと終わり検出に十分なピークデータが検出できませんでした。',
                             'code': 'INSUFFICIENT_PEAKS'
                     }), 422
                 print("len(cutListData)",len(cutListData))
@@ -104,7 +104,7 @@ def feature_extraction(url):
             if j==1: #適切な閾値を取り出す
                 if len(cutListData) < 10:
                     return jsonify({
-                        'error': '十分なピークデータが検出できませんでした。',
+                        'error': '閾値計算に十分なピークデータが検出できませんでした。',
                         'code': 'INSUFFICIENT_PEAKS'
                     }), 422
                 # 上から10つの大きいデータを取得
