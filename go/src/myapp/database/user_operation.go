@@ -87,3 +87,12 @@ func FindUserByNameAndFirebaseAuthUid(name string, firebaseAuthUid string) (mode
 	err := db.Where("name = ? AND firebase_auth_uid = ?", name, firebaseAuthUid).First(&user).Error
 	return user, err
 }
+
+// 全件取得
+func FindAllUserAllUser() ([]model.User, error) {
+	var user []model.User
+	if err := db.Find(&user).Error; err != nil {
+		return nil, err
+	}
+	return user, nil
+}

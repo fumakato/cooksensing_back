@@ -29,13 +29,18 @@ go run scripts/manage_db.go -action histogram
 ベストデータとヒストグラムの更新
 go run scripts/manage_db.go -action fixData
 
-特徴量データの全権表示
+特徴量データの全件表示
 go run scripts/manage_db.go -action getAllFeatureData
+
+特徴量データをuserIDで指定して表示
+go run scripts/manage_db.go -action getFeatureDataByUserID -user_id 2
 
 データベースの特徴量データテーブルの任意のidのデータを削除
 go run scripts/manage_db.go -action deleteFeatureDatabyid -id {数字}
 go run scripts/manage_db.go -action deleteFeatureDatabyid -id 3
 
+userの情報全件取得
+go run scripts/manage_db.go -action getAllUsers
 
 */
 
@@ -131,7 +136,7 @@ func getAllFeatureData() {
 
 	// 中身を1件ずつ出力
 	for _, data := range featureDataList {
-		fmt.Printf("🟢 ID: %d | UserID: %d | ActionID: %d | Date: %s | AvgPace: %.2f | StdDev: %.2f | CreatedAt: %s\n",
+		fmt.Printf("🟢 ID: %d | UserID: %d | ActionID: %d | Date: %s | AvgPace: %.16f | StdDev: %.16f | CreatedAt: %s\n",
 			data.ID,
 			data.UserID,
 			data.ActionID,
@@ -144,12 +149,65 @@ func getAllFeatureData() {
 	database.CloseDB()
 }
 
+func getFeatureDataByUserID(userID uint) {
+	database.ConnectDB()
+	defer database.CloseDB()
+
+	// UserIDで取得
+	featureDataList, err := database.GetFeatureDataByUserID(userID)
+	if err != nil {
+		log.Fatalf("❌ データ取得に失敗しました (UserID=%d): %v", userID, err)
+	}
+
+	// 件数ログ
+	fmt.Printf("📊 UserID %d の取得件数: %d 件\n", userID, len(featureDataList))
+
+	// 中身を1件ずつ出力
+	for _, data := range featureDataList {
+		fmt.Printf("🟢 ID: %d | UserID: %d | ActionID: %d | Date: %s | AvgPace: %.16f | StdDev: %.16f | CreatedAt: %s\n",
+			data.ID,
+			data.UserID,
+			data.ActionID,
+			data.Date.Format("2006-01-02 15:04"),
+			data.AveragePace,
+			data.AccelerationStandardDeviation,
+			data.CreatedAt.Format("2006-01-02 15:04"),
+		)
+	}
+}
+
+func getAllUsers() {
+	database.ConnectDB()
+	defer database.CloseDB()
+
+	// 全件取得
+	userList, err := database.FindAllUser()
+	if err != nil {
+		log.Fatalf("❌ ユーザー取得に失敗しました: %v", err)
+	}
+
+	// 件数ログ
+	fmt.Printf("📊 ユーザー取得件数: %d 件\n", len(userList))
+
+	// 中身を1件ずつ出力
+	for _, user := range userList {
+		fmt.Printf("🟢 ID: %d | Name: %s | FirebaseAuthUID: %s | TsukurepoID: %s | CreatedAt: %s\n",
+			user.ID,
+			user.Name,
+			user.FirebaseAuthUID,
+			user.TsukurepoID,
+			user.CreatedAt.Format("2006-01-02 15:04"),
+		)
+	}
+}
+
 func main() {
 	config.LoadConfig()
 
 	action := flag.String("action", "", "Action to perform (init, dropall, droptable)")
 	tableName := flag.String("table", "", "Name of the table to drop (required if action is droptable)")
 	id := flag.Uint("id", 0, "ID of the record to delete")
+	userID := flag.Uint("user_id", 0, "UserID to fetch FeatureData for")
 	flag.Parse()
 
 	if *action == "" {
@@ -184,6 +242,15 @@ func main() {
 			log.Fatal("ID must be provided for deleteFeatureDatabyid action")
 		}
 		deleteFeatureDataByid(*id)
+
+	case "getFeatureDataByUserID":
+		if *userID == 0 {
+			log.Fatal("UserID must be provided for getFeatureDataByUserID action")
+		}
+		getFeatureDataByUserID(*userID)
+
+	case "getAllUsers":
+		getAllUsers()
 
 	default:
 		log.Fatalf("Unknown action: %s", *action)
