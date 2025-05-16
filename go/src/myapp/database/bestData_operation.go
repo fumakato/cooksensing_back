@@ -3,6 +3,7 @@ package database
 import (
 	"fmt"
 	"myapp/model"
+	"time"
 )
 
 // データの追加
@@ -80,6 +81,101 @@ func UpdateBestDataFromFeatureData() error {
 		// Use GORM's Upsert to insert the record if it doesn't exist, or update it if it does
 		err = db.Where("user_id = ?", result.UserID).Assign(bestData).FirstOrCreate(&bestData).Error
 		if err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+func UpdateBestDataFromFeatureDataOneMonth() error {
+	// 🔸 1ヶ月前の日付を計算（基準日）
+	oneMonthAgo := time.Now().AddDate(0, -1, 0)
+
+	// -------------------------------
+	// Step 1: 直近1ヶ月のデータがあるユーザーに対して、
+	//        ・AveragePaceの最大
+	//        ・AccelerationStandardDeviationの最小
+	//        を集計する
+	// -------------------------------
+	var recentResults []struct {
+		UserID                           uint
+		MaxAveragePace                   float32
+		MinAccelerationStandardDeviation float32
+	}
+	err := db.Table("feature_data").
+		Where("date >= ?", oneMonthAgo). // ← 1ヶ月以内のデータに限定
+		Select("user_id, MAX(average_pace) as max_average_pace, MIN(acceleration_standard_deviation) as min_acceleration_standard_deviation").
+		Group("user_id").
+		Scan(&recentResults).Error
+	if err != nil {
+		return err
+	}
+
+	// 🔸 直近1ヶ月のデータがあったユーザーを記録しておく
+	userIDsWithRecentData := make(map[uint]bool)
+	for _, r := range recentResults {
+		userIDsWithRecentData[r.UserID] = true
+
+		// ベストデータを構成して保存
+		best := model.BestData{
+			UserID:                        r.UserID,
+			AveragePace:                   r.MaxAveragePace,
+			AccelerationStandardDeviation: r.MinAccelerationStandardDeviation,
+			AveragePaceClass:              100, // 仮クラス
+			AccelerationStdDevClass:       100,
+		}
+		if err := db.Where("user_id = ?", r.UserID).Assign(best).FirstOrCreate(&best).Error; err != nil {
+			return err
+		}
+	}
+
+	// -------------------------------
+	// Step 2: 直近1ヶ月以内にデータがないユーザーに対して、
+	//        「最新の1件（全期間中の直近）だけ」を使ってBestDataを作成
+	// -------------------------------
+
+	// まず全ユーザーの user_id 一覧を取得
+	var allResults []struct {
+		UserID                           uint
+		MaxAveragePace                   float32
+		MinAccelerationStandardDeviation float32
+	}
+	err = db.Table("feature_data").
+		Select("user_id, MAX(average_pace) as max_average_pace, MIN(acceleration_standard_deviation) as min_acceleration_standard_deviation").
+		Group("user_id").
+		Scan(&allResults).Error
+	if err != nil {
+		return err
+	}
+
+	// 🔸 1ヶ月以内にデータがなかったユーザーに対してのみ処理
+	for _, r := range allResults {
+		if userIDsWithRecentData[r.UserID] {
+			continue // すでに処理済みのユーザーはスキップ
+		}
+
+		// 全期間の中から「最新の1件」を取得
+		var latest model.FeatureData
+		err := db.Where("user_id = ?", r.UserID).
+			Order("date DESC").
+			Limit(1).
+			First(&latest).Error
+
+		if err != nil {
+			return fmt.Errorf("failed to get latest feature_data for user_id=%d: %w", r.UserID, err)
+		}
+
+		// その1件からBestDataを構成して保存
+		best := model.BestData{
+			UserID:                        latest.UserID,
+			AveragePace:                   latest.AveragePace,
+			AccelerationStandardDeviation: latest.AccelerationStandardDeviation,
+			AveragePaceClass:              100,
+			AccelerationStdDevClass:       100,
+		}
+
+		if err := db.Where("user_id = ?", latest.UserID).Assign(best).FirstOrCreate(&best).Error; err != nil {
 			return err
 		}
 	}

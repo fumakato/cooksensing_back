@@ -28,6 +28,7 @@ func UpdateUser(user model.User) error {
 	return nil
 }
 
+// データ全件取得
 func FindAllUser() ([]model.User, error) {
 	var userDataList []model.User
 	if err := db.Find(&userDataList).Error; err != nil {
