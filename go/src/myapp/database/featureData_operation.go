@@ -65,9 +65,23 @@ func GetFeatureDataByUserIDWithinDays(userID uint, days int) ([]model.FeatureDat
 	// daysが0の場合、全てのデータを取得
 	if days == 0 {
 		println("------days=0------")
-		if err := db.Where("user_id = ?", userID).Find(&featureData).Error; err != nil {
+
+		// 評価実験用
+		// 今年の4月の開始日と終了日を定義
+		now := time.Now()
+		year := now.Year()
+		startDate := time.Date(year, 4, 1, 0, 0, 0, 0, time.Local)
+		endDate := time.Date(year, 5, 1, 0, 0, 0, 0, time.Local) // 5月1日の0時が4月の終わり
+
+		// userID と 4月の範囲 で絞り込む
+		if err := db.Where("user_id = ? AND date >= ? AND date < ?", userID, startDate, endDate).
+			Find(&featureData).Error; err != nil {
 			return nil, err
+
 		}
+		// if err := db.Where("user_id = ?", userID).Find(&featureData).Error; err != nil {
+		// 	return nil, err
+		// }
 		return featureData, nil
 	}
 

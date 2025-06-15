@@ -40,6 +40,12 @@ func main() {
 	// 	fmt.Println(table)
 	// }
 
+	// この四つを後から入れてみたいなーと思っているけど...
+	// //ベストとヒストグラムを更新
+	// database.UpdateBestDataFromFeatureData()
+	// database.GenerateAndStoreHistogramData()
+	// database.AssignBestClassToAll()
+
 	// ルーターの設定
 	router := routes.SetupRouter()
 
