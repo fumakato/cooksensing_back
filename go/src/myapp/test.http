@@ -1,0 +1,13 @@
+GET http://localhost:8080/users
+
+###
+
+GET http://localhost:8080/best
+
+###
+
+POST http://localhost:8080/feature_data/by_userid
+
+{
+    "user_id":1
+}
